@@ -2,6 +2,7 @@ package slider;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
@@ -9,12 +10,14 @@ import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.GeneralPath;
 
 import javax.swing.JComponent;
 import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.plaf.basic.BasicGraphicsUtils;
 import javax.swing.plaf.basic.BasicSliderUI;
 
 /**
@@ -22,9 +25,9 @@ import javax.swing.plaf.basic.BasicSliderUI;
  * one for the lower value and one for the upper value.
  */
 class RangeSliderUI extends BasicSliderUI {
-
+	
     /** Color of selected range. */
-    private Color rangeColor = Color.GREEN;
+    private Color rangeColor = Color.decode("#ffb41f");
     
     /** Location and size of thumb for upper value. */
     private Rectangle upperThumbRect;
@@ -35,6 +38,8 @@ class RangeSliderUI extends BasicSliderUI {
     private transient boolean lowerDragging;
     /** Indicator that determines whether upper thumb is being dragged. */
     private transient boolean upperDragging;
+    
+    private boolean paintFocus = false;
     
     /**
      * Constructs a RangeSliderUI for the specified slider component.
@@ -136,7 +141,7 @@ class RangeSliderUI extends BasicSliderUI {
      */
     @Override
     protected Dimension getThumbSize() {
-        return new Dimension(12, 12);
+        return new Dimension(13, 13);
     }
 
     /**
@@ -202,10 +207,10 @@ class RangeSliderUI extends BasicSliderUI {
             g.setColor(oldColor);
             
         } else {
-            // Determine position of selected range by moving from the middle
+        	// Determine position of selected range by moving from the middle
             // of one thumb to the other.
-            int lowerY = thumbRect.x + (thumbRect.width / 2);
-            int upperY = upperThumbRect.x + (upperThumbRect.width / 2);
+            int lowerY = thumbRect.y + (thumbRect.height / 2);
+            int upperY = upperThumbRect.y + (upperThumbRect.height / 2);
             
             // Determine track position.
             int cx = (trackBounds.width / 2) - 2;
@@ -247,7 +252,7 @@ class RangeSliderUI extends BasicSliderUI {
         Graphics2D g2d = (Graphics2D) g.create();
 
         // Create default thumb shape.
-        Shape thumbShape = createThumbShape(w - 1, h - 1);
+        Shape thumbShape = createThumbShape(w, h);
 
         // Draw thumb.
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
@@ -259,6 +264,8 @@ class RangeSliderUI extends BasicSliderUI {
 
         g2d.setColor(Color.BLUE);
         g2d.draw(thumbShape);
+         
+        paintThumbLabel(g2d, w, h, false);
         
         // Dispose graphics.
         g2d.dispose();
@@ -276,7 +283,7 @@ class RangeSliderUI extends BasicSliderUI {
         Graphics2D g2d = (Graphics2D) g.create();
 
         // Create default thumb shape.
-        Shape thumbShape = createThumbShape(w - 1, h - 1);
+        Shape thumbShape = createThumbShape(w, h);
 
         // Draw thumb.
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
@@ -288,17 +295,86 @@ class RangeSliderUI extends BasicSliderUI {
 
         g2d.setColor(Color.RED);
         g2d.draw(thumbShape);
-
+        
+        paintThumbLabel(g2d, w, h, true);
+        
         // Dispose graphics.
         g2d.dispose();
     }
+    
+    /**
+     * Paints the current value below a thumb.
+     * @author DUDSS
+     */
+    private void paintThumbLabel(Graphics2D g2d, int w, int h, boolean upper) {
+    	int heightOffset = 32;
+    	FontMetrics fm = g2d.getFontMetrics();
+    	 
+		Color textColor = g2d.getColor();
+		g2d.setColor(Color.LIGHT_GRAY);
 
+		String text;
+		if (!upper) {
+			text = String.valueOf(slider.getValue());
+		} else {
+			text = String.valueOf(((RangeSlider) slider).getUpperValue());
+		}
+		int labelWidth = fm.stringWidth(text);
+
+		int labelAscent = (int) (fm.getLineMetrics(text, g2d).getAscent());
+		int labelHeight = (int) (fm.getLineMetrics(text, g2d).getAscent() + fm.getLineMetrics(text, g2d).getDescent());
+
+		if (slider.getOrientation() == JSlider.HORIZONTAL) {
+			g2d.fillRoundRect((int) (w / 2d - labelWidth / 2d) - 2, heightOffset - labelAscent + 1, labelWidth + 3, labelAscent, 2, 2);
+			g2d.setColor(Color.GRAY);
+			g2d.drawRoundRect((int) (w / 2d - labelWidth / 2d) - 2, heightOffset - labelAscent + 1, labelWidth + 3, labelAscent, 2, 2);
+		} else {
+			g2d.fillRoundRect(w + 8 - 2, 0, labelWidth + 3, labelAscent, 2, 2);
+			g2d.setColor(Color.GRAY);
+			g2d.drawRoundRect(w + 8 - 2, 0, labelWidth + 3, labelAscent, 2, 2);
+		}
+
+		g2d.setColor(textColor);
+
+		if (slider.getOrientation() == JSlider.HORIZONTAL) {
+			g2d.drawString(text, (int) (w / 2d - labelWidth / 2d), heightOffset);
+		} else {
+			g2d.drawString(text, w + 8, labelAscent - 1);
+		}
+		
+		//g2d.fillRect(x, y, width, height);
+		
+		/*if (!upper) {
+			g2d.drawString(text, w + 2, labelAscent - 1);
+		} else {
+			g2d.drawString(text, -labelWidth - 2, labelAscent - 1);
+		}*/
+    }
+    
     /**
      * Returns a Shape representing a thumb.
+     * @author DUDSS
      */
     private Shape createThumbShape(int width, int height) {
-        // Use circular shape.
-        Ellipse2D shape = new Ellipse2D.Double(0, 0, width, height);
+    	GeneralPath shape = new GeneralPath();
+    	if (slider.getOrientation() == JSlider.VERTICAL) {
+    		double points[][] = { 
+    	        { 0, height*0.1d }, { width*0.6d, height*0.1d }, {width-1, height/2d}, { width*0.6d, height*0.9d }, {0, height*0.9d}
+    	    };   
+        	shape.moveTo(points[0][0], points[0][1]);
+            for (int k = 1; k < points.length; k++) {
+                shape.lineTo(points[k][0], points[k][1]);
+            }
+    	} else {
+    		double points[][] = { 
+    	        { width*0.1d, 0 }, { width*0.9d, 0 }, {width*0.9d, height*0.6d}, { width/2d, height-1 }, {width*0.1d, height*0.6d}
+    	    };
+        	shape.moveTo(points[0][0], points[0][1]);
+            for (int k = 1; k < points.length; k++) {
+                shape.lineTo(points[k][0], points[k][1]);
+            }        	
+    	}
+    	shape.closePath();
         return shape;
     }
     
@@ -356,6 +432,13 @@ class RangeSliderUI extends BasicSliderUI {
                 slider.setValue(oldValue + delta);
             }
         }       
+    }
+    
+    @Override
+    public void paintFocus(Graphics g)  {
+    	if (paintFocus) {
+    		super.paintFocus(g);
+    	}
     }
     
     /**
@@ -499,6 +582,7 @@ class RangeSliderUI extends BasicSliderUI {
                 thumbTop = Math.min(thumbTop, trackBottom - halfThumbHeight);
 
                 setThumbLocation(thumbRect.x, thumbTop);
+                slider.repaint();
 
                 // Update slider value.
                 thumbMiddle = thumbTop + halfThumbHeight;
@@ -522,7 +606,8 @@ class RangeSliderUI extends BasicSliderUI {
                 thumbLeft = Math.min(thumbLeft, trackRight - halfThumbWidth);
 
                 setThumbLocation(thumbLeft, thumbRect.y);
-
+                slider.repaint();
+                
                 // Update slider value.
                 thumbMiddle = thumbLeft + halfThumbWidth;
                 slider.setValue(valueForXPosition(thumbMiddle));
@@ -558,7 +643,8 @@ class RangeSliderUI extends BasicSliderUI {
                 thumbTop = Math.min(thumbTop, trackBottom - halfThumbHeight);
 
                 setUpperThumbLocation(thumbRect.x, thumbTop);
-
+                slider.repaint();
+                
                 // Update slider extent.
                 thumbMiddle = thumbTop + halfThumbHeight;
                 slider.setExtent(valueForYPosition(thumbMiddle) - slider.getValue());
@@ -581,6 +667,7 @@ class RangeSliderUI extends BasicSliderUI {
                 thumbLeft = Math.min(thumbLeft, trackRight - halfThumbWidth);
 
                 setUpperThumbLocation(thumbLeft, thumbRect.y);
+                slider.repaint();
                 
                 // Update slider extent.
                 thumbMiddle = thumbLeft + halfThumbWidth;

@@ -10,69 +10,94 @@ import javax.swing.BorderFactory;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import net.miginfocom.swing.MigLayout;
+import javax.swing.JSeparator;
 
 /**
  * Demo application panel to display a range slider.
  */
 public class RangeSliderDemo extends JPanel {
+    private final RangeSlider rangeSlider = new RangeSlider(0, 100);
+    private final RangeSlider rangeSlider2 = new RangeSlider(0, 10);
+    
+    private final JLabel titleLable = new JLabel("Swing-range-slider demo");
+    private final JPanel panel = new JPanel();
+    private final JSeparator separator = new JSeparator();
+    
+    private final JLabel verticalSliderValue1 = new JLabel("");
+    private final JLabel verticalSliderValue2 = new JLabel("");
+    private final JLabel horizontalSliderValue1 = new JLabel("");
+    private final JLabel horizontalSliderValue2 = new JLabel("");
 
-    private JLabel rangeSliderLabel1 = new JLabel();
-    private JLabel rangeSliderValue1 = new JLabel();
-    private JLabel rangeSliderLabel2 = new JLabel();
-    private JLabel rangeSliderValue2 = new JLabel();
-    private RangeSlider rangeSlider = new RangeSlider();
-
-    public RangeSliderDemo() {
-        setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
-        setLayout(new GridBagLayout());
+    public RangeSliderDemo() {    
+        rangeSlider.setOrientation(JSlider.HORIZONTAL);
         
-        rangeSliderLabel1.setText("Lower value:");
-        rangeSliderLabel2.setText("Upper value:");
-        rangeSliderValue1.setHorizontalAlignment(JLabel.LEFT);
-        rangeSliderValue2.setHorizontalAlignment(JLabel.LEFT);
-        
-        rangeSlider.setPreferredSize(new Dimension(240, rangeSlider.getPreferredSize().height));
         rangeSlider.setMinimum(0);
-        rangeSlider.setMaximum(10);
+        rangeSlider.setMaximum(100);
         
-        // Add listener to update display.
+        rangeSlider.setPaintTicks(true);
+        rangeSlider.setPaintLabels(true);
+        rangeSlider.setSnapToTicks(false);
+        rangeSlider.setMajorTickSpacing(10);
+        rangeSlider.setMinorTickSpacing(2);
+        
+        rangeSlider2.setOrientation(JSlider.VERTICAL);
+        
+        rangeSlider2.setPaintTicks(false);
+        rangeSlider2.setPaintLabels(true);
+        rangeSlider2.setSnapToTicks(false);
+        rangeSlider2.setMajorTickSpacing(2);
+        rangeSlider2.setMinorTickSpacing(1);
+        
+        // Add listeners to update display.
         rangeSlider.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
                 RangeSlider slider = (RangeSlider) e.getSource();
-                rangeSliderValue1.setText(String.valueOf(slider.getValue()));
-                rangeSliderValue2.setText(String.valueOf(slider.getUpperValue()));
+                horizontalSliderValue1.setText("Horizontal slider low: " + String.valueOf(slider.getValue()));
+                horizontalSliderValue2.setText("Horizontal slider high: " + String.valueOf(slider.getUpperValue()));
             }
         });
-
-        add(rangeSliderLabel1, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-            GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(0, 0, 3, 3), 0, 0));
-        add(rangeSliderValue1, new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-            GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(0, 0, 3, 0), 0, 0));
-        add(rangeSliderLabel2, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
-            GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(0, 0, 3, 3), 0, 0));
-        add(rangeSliderValue2, new GridBagConstraints(1, 1, 1, 1, 0.0, 0.0,
-            GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(0, 0, 6, 0), 0, 0));
-        add(rangeSlider      , new GridBagConstraints(0, 2, 2, 1, 0.0, 0.0,
-            GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, new Insets(0, 0, 0, 0), 0, 0));
+        
+        rangeSlider2.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                RangeSlider slider = (RangeSlider) e.getSource();
+                verticalSliderValue1.setText("Vertical slider low: " + String.valueOf(slider.getValue()));
+                verticalSliderValue2.setText("Vertical slider high: " + String.valueOf(slider.getUpperValue()));
+            }
+        });
+        
+        setLayout(new MigLayout("", "[]20px[grow]", "[][grow]"));
+        
+        add(panel, "cell 1 0,grow");
+        panel.setLayout(new MigLayout("", "[grow]", "[][][][]20px[][]"));
+        panel.add(titleLable, "cell 0 0");    
+        panel.add(separator, "cell 0 1,growx");       
+        panel.add(verticalSliderValue1, "cell 0 2");     
+        panel.add(verticalSliderValue2, "cell 0 3");        
+        panel.add(horizontalSliderValue1, "cell 0 4");      
+        panel.add(horizontalSliderValue2, "cell 0 5");
+        
+        add(rangeSlider2, "cell 0 0 1 2,grow");
+        add(rangeSlider, "cell 1 1,growx,aligny bottom");
     }
     
     public void display() {
         // Initialize values.
-        rangeSlider.setValue(3);
-        rangeSlider.setUpperValue(7);
+        rangeSlider.setValue(20);
+        rangeSlider.setUpperValue(100);
         
-        // Initialize value display.
-        rangeSliderValue1.setText(String.valueOf(rangeSlider.getValue()));
-        rangeSliderValue2.setText(String.valueOf(rangeSlider.getUpperValue()));
+        rangeSlider2.setValue(2);
+        rangeSlider2.setUpperValue(7);
         
         // Create window frame.
         JFrame frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setResizable(false);
+        frame.setResizable(true);
         frame.setTitle("Range Slider Demo");
         
         // Set window content and validate.
